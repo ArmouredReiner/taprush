@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>LevelRing ⚡</title>
+  <meta name="description" content="Orbit the ring, hit the red zones, beat the clock!" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       CSS CUSTOM PROPERTIES
+       ============================================================ */
+    :root {
+      --bg: #0a0a0f;
+      --bg-light: #1a1a2e;
+      --primary: #00f5ff;
+      --accent: #ff00aa;
+      --success: #00ff88;
+      --danger: #ff3366;
+      --warning: #ffaa00;
+      --text: #ffffff;
+      --text-muted: #4a9aa0;
+      --glow-primary: 0 0 10px var(--primary), 0 0 20px var(--primary), 0 0 40px var(--primary);
+      --glow-success: 0 0 8px var(--success), 0 0 16px var(--success);
+      --glow-danger: 0 0 8px var(--danger), 0 0 16px var(--danger);
+      --glow-accent: 0 0 8px var(--accent), 0 0 16px var(--accent);
+      --font: 'Press Start 2P', monospace;
+      --ease-arcade: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ============================================================
+       CRT OVERLAY
+       ============================================================ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.15) 2px,
+          rgba(0, 0, 0, 0.15) 4px
+        );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.6) 100%);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ============================================================
+       GAME CONTAINER
+       ============================================================ */
+    #game {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    /* ============================================================
+       RING ARENA
+       ============================================================ */
+    .arena {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* SVG ring — contains all ring visuals */
+    .ring-svg {
+      overflow: visible;
+      display: block;
+    }
+
+    /* ============================================================
+       HUD — Top info bar
+       ============================================================ */
+    .hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      pointer-events: none;
+    }
+
+    .hud-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hud-level {
+      font-size: clamp(9px, 2.5vw, 12px);
+      color: var(--primary);
+      text-shadow: var(--glow-primary);
+    }
+
+    .hud-score {
+      font-size: clamp(8px, 2vw, 10px);
+      color: var(--text-muted);
+    }
+
+    .hud-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+
+    .hud-title {
+      font-size: clamp(10px, 3vw, 14px);
+      color: var(--primary);
+      text-shadow: var(--glow-primary);
+      letter-spacing: 2px;
+    }
+
+    .hud-hits {
+      font-size: clamp(7px, 2vw, 9px);
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .hud-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .hud-best {
+      font-size: clamp(7px, 2vw, 9px);
+      color: var(--accent);
+      text-shadow: var(--glow-accent);
+    }
+
+    .hud-best.hidden { display: none; }
+
+    /* ============================================================
+       SCREENS — Idle, Level Complete, Game Over
+       ============================================================ */
+    .screen {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 32px 24px;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 250ms var(--ease-arcade);
+    }
+
+    .screen.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .screen-title {
+      font-size: clamp(18px, 6vw, 28px);
+      color: var(--primary);
+      text-shadow: var(--glow-primary);
+      line-height: 1.4;
+    }
+
+    .screen-title.success {
+      color: var(--success);
+      text-shadow: var(--glow-success);
+    }
+
+    .screen-title.fail {
+      color: var(--danger);
+      text-shadow: var(--glow-danger);
+    }
+
+    .screen-subtitle {
+      font-size: clamp(8px, 2.5vw, 11px);
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    .screen-stat {
+      font-size: clamp(9px, 2.5vw, 12px);
+      color: var(--accent);
+      text-shadow: var(--glow-accent);
+    }
+
+    .screen-btn {
+      font-family: var(--font);
+      font-size: clamp(9px, 2.5vw, 12px);
+      color: var(--primary);
+      background: transparent;
+      border: 2px solid var(--primary);
+      padding: 16px 36px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-shadow: var(--glow-primary);
+      box-shadow: var(--glow-primary);
+      min-height: 56px;
+      min-width: 200px;
+      transition: all 200ms var(--ease-arcade);
+      margin-top: 8px;
+    }
+
+    .screen-btn:active {
+      background: var(--primary);
+      color: var(--bg);
+      text-shadow: none;
+    }
+
+    .screen-btn.accent {
+      color: var(--accent);
+      border-color: var(--accent);
+      text-shadow: var(--glow-accent);
+      box-shadow: var(--glow-accent);
+    }
+
+    .screen-btn.accent:active {
+      background: var(--accent);
+    }
+
+    .level-progress {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .level-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--text-muted);
+      transition: all 200ms var(--ease-arcade);
+    }
+
+    .level-dot.done {
+      background: var(--success);
+      border-color: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .level-dot.current {
+      border-color: var(--warning);
+      box-shadow: 0 0 6px var(--warning);
+    }
+
+    /* ============================================================
+       RING ANIMATIONS
+       ============================================================ */
+    @keyframes ring-pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.6; }
+    }
+
+    .ring-group {
+      animation: ring-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes hit-burst {
+      0%   { r: 8; opacity: 1; }
+      100% { r: 32; opacity: 0; }
+    }
+
+    .hit-burst circle {
+      fill: var(--success);
+      opacity: 0;
+    }
+
+    .hit-burst.active circle {
+      animation: hit-burst 400ms ease-out forwards;
+    }
+
+
+    /* ============================================================
+       LEVEL UP FLASH
+       ============================================================ */
+    .level-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 255, 136, 0.15);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 100ms;
+    }
+
+    .level-flash.active {
+      opacity: 1;
+    }
+
+    /* ============================================================
+       MISS FLASH — red screen flash on miss
+       ============================================================ */
+    .miss-flash {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(255, 51, 102, 0.3);
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .miss-flash.active {
+      animation: miss-flash 400ms ease-out forwards;
+    }
+
+    @keyframes miss-flash {
+      0%   { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ============================================================
+       FEEDBACK POP — floating +/- text
+       ============================================================ */
+    .feedback-pop {
+      position: fixed;
+      z-index: 150;
+      font-family: var(--font);
+      font-size: clamp(14px, 5vw, 22px);
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+    }
+
+    .feedback-pop.pop {
+      animation: pop-float 600ms ease-out forwards;
+    }
+
+    @keyframes pop-float {
+      0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.6); }
+      30%  { opacity: 1; transform: translate(-50%, -80%) scale(1.2); }
+      100% { opacity: 0; transform: translate(-50%, -150%) scale(1); }
+    }
+
+    /* ============================================================
+       TOP BAR BUTTONS
+       ============================================================ */
+    .top-btns {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 60;
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      color: var(--text-muted);
+      transition: color 200ms;
+      font-size: 20px;
+    }
+
+    .icon-btn:active {
+      color: var(--primary);
+    }
+
+    /* ============================================================
+       LEADERBOARD
+       ============================================================ */
+    .leaderboard-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 300ms var(--ease-arcade);
+    }
+
+    .leaderboard-panel.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .leaderboard-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+
+    .leaderboard-content {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      max-height: 70vh;
+      background: var(--bg-light);
+      border: 2px solid var(--primary);
+      box-shadow: var(--glow-primary);
+      border-radius: 12px 12px 0 0;
+      padding: 24px;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 300ms var(--ease-arcade);
+    }
+
+    .leaderboard-panel.open .leaderboard-content {
+      transform: translateY(0);
+    }
+
+    .leaderboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .leaderboard-title {
+      font-size: clamp(11px, 3vw, 14px);
+      color: var(--primary);
+      text-shadow: var(--glow-primary);
+    }
+
+    .leaderboard-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .leaderboard-entry {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: rgba(0, 245, 255, 0.05);
+      border-radius: 6px;
+      border: 1px solid rgba(0, 245, 255, 0.15);
+    }
+
+    .leaderboard-rank {
+      font-size: clamp(10px, 3vw, 13px);
+      color: var(--accent);
+      min-width: 28px;
+      text-align: center;
+    }
+
+    .leaderboard-rank.gold   { color: #ffd700; text-shadow: 0 0 8px #ffd700; }
+    .leaderboard-rank.silver { color: #c0c0c0; text-shadow: 0 0 8px #c0c0c0; }
+    .leaderboard-rank.bronze { color: #cd7f32; text-shadow: 0 0 8px #cd7f32; }
+
+    .leaderboard-score {
+      font-size: clamp(10px, 3vw, 13px);
+      color: var(--primary);
+      flex: 1;
+    }
+
+    .leaderboard-date {
+      font-size: clamp(7px, 2vw, 9px);
+      color: var(--text-muted);
+    }
+
+    .leaderboard-empty {
+      font-size: clamp(9px, 2.5vw, 11px);
+      color: var(--text-muted);
+      text-align: center;
+      padding: 24px;
+    }
+
+    /* ============================================================
+       LEVEL INFO SCREEN (between levels)
+       ============================================================ */
+    .level-banner {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      background: rgba(10, 10, 15, 0.9);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms;
+    }
+
+    .level-banner.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .level-banner-number {
+      font-size: clamp(48px, 18vw, 96px);
+      color: var(--warning);
+      text-shadow: 0 0 20px var(--warning), 0 0 40px var(--warning);
+      animation: level-pop 600ms var(--ease-arcade) forwards;
+    }
+
+    @keyframes level-pop {
+      0%   { transform: scale(0.3); opacity: 0; }
+      60%  { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .level-banner-text {
+      font-size: clamp(10px, 3vw, 14px);
+      color: var(--text-muted);
+      letter-spacing: 2px;
+    }
+
+    .level-banner-speed {
+      font-size: clamp(8px, 2.5vw, 11px);
+      color: var(--accent);
+      text-shadow: var(--glow-accent);
+    }
+
+    /* ============================================================
+       DARK MODE
+       ============================================================ */
+    body.light-mode {
+      --bg: #f0f0f5;
+      --bg-light: #e0e0ea;
+      --text: #0a0a0f;
+      --text-muted: #555570;
+      --primary: #0088aa;
+      --accent: #cc0088;
+      --success: #00aa55;
+      --danger: #cc2244;
+      --glow-primary: 0 0 6px var(--primary);
+      --glow-success: 0 0 6px var(--success);
+      --glow-danger: 0 0 6px var(--danger);
+      --glow-accent: 0 0 6px var(--accent);
+    }
+
+    body.light-mode body::before,
+    body.light-mode body::after {
+      display: none;
+    }
+
+    /* Prevent pull-to-refresh */
+    body {
+      overscroll-behavior: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dark mode toggle -->
+  <div class="top-btns">
+    <button class="icon-btn" id="darkToggle" aria-label="Toggle dark/light mode">🌙</button>
+    <button class="icon-btn" id="leaderboardBtn" aria-label="Leaderboard">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+        <path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/>
+        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/>
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud" id="hud">
+    <div class="hud-left">
+      <div class="hud-level" id="hudLevel">LEVEL 1</div>
+      <div class="hud-score" id="hudScore">SCORE: 0</div>
+    </div>
+    <div class="hud-center">
+      <div class="hud-title" id="hudTitle">LEVEL RING</div>
+      <div class="hud-hits" id="hudHits"></div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-best hidden" id="hudBest">BEST: <span id="hudBestVal">0</span></div>
+    </div>
+  </div>
+
+  <!-- Main Game -->
+  <main id="game">
+
+    <!-- Ring Arena -->
+    <div class="arena" id="arena">
+      <div class="ring-container" id="ringContainer">
+        <svg class="ring-svg" id="ringSvg" viewBox="-110 -110 220 220" width="320" height="320">
+          <!-- Background track ring -->
+          <circle cx="0" cy="0" r="88"
+            fill="none"
+            stroke="rgba(0, 245, 255, 0.1)"
+            stroke-width="14"
+            stroke-linecap="round"/>
+
+          <!-- Tick marks around the ring -->
+          <g id="tickMarks"></g>
+
+          <!-- Red target zones (drawn dynamically) -->
+          <g id="targetZones"></g>
+
+          <!-- Hit burst effect -->
+          <g class="hit-burst" id="hitBurst">
+            <circle cx="0" cy="-88"/>
+          </g>
+
+          <!-- Green indicator dot -->
+          <circle id="indicator" cx="0" cy="-88" r="8"
+            fill="var(--success)"
+            style="filter: drop-shadow(0 0 6px var(--success))"/>
+
+          <!-- Center display -->
+          <text id="ringCenterText" x="0" y="6" text-anchor="middle"
+            font-family="'Press Start 2P', monospace"
+            font-size="9"
+            fill="var(--text-muted)"
+            opacity="0">TAP!</text>
+        </svg>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Level Up Flash -->
+  <div class="level-flash" id="levelFlash"></div>
+
+  <!-- Miss Flash -->
+  <div class="miss-flash" id="missFlash"></div>
+
+  <!-- Feedback pop -->
+  <div class="feedback-pop" id="feedbackPop"></div>
+
+  <!-- Level Banner (shown between levels) -->
+  <div class="level-banner" id="levelBanner">
+    <div class="level-banner-number" id="levelBannerNumber">1</div>
+    <div class="level-banner-text" id="levelBannerText">GET READY</div>
+    <div class="level-banner-speed" id="levelBannerSpeed"></div>
+  </div>
+
+  <!-- IDLE Screen -->
+  <div class="screen active" id="screenIdle">
+    <div class="screen-title" style="display:flex;align-items:center;gap:10px;font-size:clamp(18px,6vw,26px);">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" style="color:var(--primary);filter:drop-shadow(0 0 6px var(--primary))">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+      LEVEL RING
+    </div>
+    <div class="screen-subtitle">
+      TAP WHEN THE<br>GREEN DOT HITS RED
+    </div>
+    <div class="level-progress" id="idleLevelDots"></div>
+    <div class="screen-stat" id="screenIdleBest"></div>
+    <button class="screen-btn" id="btnStart">START GAME</button>
+  </div>
+
+  <!-- Level Complete Screen -->
+  <div class="screen" id="screenLevelComplete">
+    <div class="screen-title success">LEVEL CLEAR!</div>
+    <div class="screen-subtitle" id="lcSubtitle"></div>
+    <div class="screen-stat" id="lcScore"></div>
+    <button class="screen-btn accent" id="btnNextLevel">NEXT LEVEL</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div class="screen" id="screenGameOver">
+    <div class="screen-title fail">GAME OVER</div>
+    <div class="screen-subtitle" id="goSubtitle"></div>
+    <div class="screen-stat" id="goScore"></div>
+    <div class="screen-stat" id="goBest"></div>
+    <button class="screen-btn" id="btnRetry">TRY AGAIN</button>
+  </div>
+
+  <!-- All Clear Screen -->
+  <div class="screen" id="screenAllClear">
+    <div class="screen-title success">YOU WIN!</div>
+    <div class="screen-subtitle">ALL 5 LEVELS CLEARED!</div>
+    <div class="screen-stat" id="acScore"></div>
+    <div class="screen-stat" id="acBest"></div>
+    <button class="screen-btn accent" id="btnPlayAgain">PLAY AGAIN</button>
+  </div>
+
+  <!-- Leaderboard Panel -->
+  <div class="leaderboard-panel" id="leaderboardPanel">
+    <div class="leaderboard-backdrop" id="leaderboardBackdrop"></div>
+    <div class="leaderboard-content">
+      <div class="leaderboard-header">
+        <span class="leaderboard-title">⚡ TOP SCORES</span>
+        <button class="leaderboard-close" id="leaderboardClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="leaderboard-list" id="leaderboardList"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       LEVEL RING — Retro Arcade Timing Game
+       Vanilla JS, no frameworks
+       ============================================================ */
+
+    // ---- LEVEL CONFIG ----
+    // speed: degrees per frame; hits: successful taps to clear level
+    // zoneMin/zoneMax: red zone size is randomly chosen each spawn (degrees)
+    const LEVELS = [
+      { speed: 1.8, hits: 5,  label: 'EASY',   zoneMin: 30, zoneMax: 50 },
+      { speed: 2.5, hits: 7,  label: 'MEDIUM',  zoneMin: 24, zoneMax: 42 },
+      { speed: 3.4, hits: 9,  label: 'HARD',    zoneMin: 18, zoneMax: 34 },
+      { speed: 4.5, hits: 11, label: 'EXPERT',  zoneMin: 14, zoneMax: 28 },
+      { speed: 5.8, hits: 13, label: 'MASTER',  zoneMin: 10, zoneMax: 22 },
+    ];
+
+    const TOTAL_ROUNDS_PER_LEVEL = LEVELS.map(l => l.hits);
+    const STORAGE_KEYS = {
+      BEST: 'levelring_best_score',
+      LEADERBOARD: 'levelring_leaderboard',
+    };
+    const RING_RADIUS = 88;
+    const DEG_TO_RAD = Math.PI / 180;
+
+    // ---- DOM REFS ----
+    const $ = id => document.getElementById(id);
+    const game          = $('game');
+    const arena         = $('arena');
+    const indicator     = $('indicator');
+    const targetZones   = $('targetZones');
+    const tickMarks     = $('tickMarks');
+    const hitBurst      = $('hitBurst');
+    const ringCenterText = $('ringCenterText');
+    const hudLevel      = $('hudLevel');
+    const hudScore      = $('hudScore');
+    const hudTitle      = $('hudTitle');
+    const hudHits       = $('hudHits');
+    const hudBest       = $('hudBest');
+    const hudBestVal    = $('hudBestVal');
+    const feedbackPop   = $('feedbackPop');
+    const levelFlash    = $('levelFlash');
+    const missFlash     = $('missFlash');
+    const levelBanner   = $('levelBanner');
+    const levelBannerNumber = $('levelBannerNumber');
+    const levelBannerText   = $('levelBannerText');
+    const levelBannerSpeed  = $('levelBannerSpeed');
+    const screenIdle    = $('screenIdle');
+    const screenIdleBest = $('screenIdleBest');
+    const idleLevelDots = $('idleLevelDots');
+    const screenLevelComplete = $('screenLevelComplete');
+    const lcSubtitle    = $('lcSubtitle');
+    const lcScore       = $('lcScore');
+    const screenGameOver = $('screenGameOver');
+    const goSubtitle    = $('goSubtitle');
+    const goScore       = $('goScore');
+    const goBest        = $('goBest');
+    const screenAllClear = $('screenAllClear');
+    const acScore       = $('acScore');
+    const acBest        = $('acBest');
+    const leaderboardPanel = $('leaderboardPanel');
+    const leaderboardList  = $('leaderboardList');
+    const darkToggle    = $('darkToggle');
+    const leaderboardBtn = $('leaderboardBtn');
+
+    // ---- GAME STATE ----
+    let currentLevel    = 0;
+    let currentAngle    = 0;    // degrees [0–360], 0 = top
+    let hitsThisLevel   = 0;
+    let totalScore      = 0;
+    let levelScore      = 0;
+    let currentZoneStart = 0;   // zone is ZONE_OFFSET ahead of indicator
+    let currentZoneEnd   = 0;
+    let activeZoneWidth  = 0;   // random width chosen at zone spawn
+    let gameRunning     = false;
+    let animFrameId      = null;
+    let audioCtx        = null;
+    let tapLockout      = false;
+    let enteredZone     = false; // has green dot entered red zone this rotation?
+    let wasInZone       = false; // was indicator in zone last frame?
+
+    // ---- AUDIO ----
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+
+    function playTone(freq, dur, type = 'square', vol = 0.08) {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(vol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur / 1000);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + dur / 1000);
+      } catch (e) {}
+    }
+
+    function soundHit() { playTone(880, 80, 'sine', 0.07); }
+    function soundMiss() { playTone(220, 200, 'sawtooth', 0.08); }
+    function soundLevelUp() {
+      [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 120, 'sine', 0.06), i * 100));
+    }
+    function soundGameWin() {
+      [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => playTone(f, 160, 'sine', 0.05), i * 120));
+    }
+    function soundTap() { playTone(660, 40, 'square', 0.04); }
+
+    // ---- VIBRATION ----
+    function vibrate(pattern) { if ('vibrate' in navigator) navigator.vibrate(pattern); }
+    function vibrateHit()  { vibrate(40); }
+    function vibrateMiss() { vibrate([100, 50, 100]); }
+    function vibrateWin()  { vibrate([80, 40, 80, 40, 160]); }
+
+    // ---- LOCAL STORAGE ----
+    function getBest() {
+      const v = localStorage.getItem(STORAGE_KEYS.BEST);
+      return v ? parseInt(v) : null;
+    }
+    function setBest(s) { localStorage.setItem(STORAGE_KEYS.BEST, s); }
+    function getLeaderboard() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.LEADERBOARD)) || []; }
+      catch { return []; }
+    }
+    function saveScore(score) {
+      const lb = getLeaderboard();
+      lb.push({ score, date: Date.now() });
+      lb.sort((a, b) => b.score - a.score);
+      const top = lb.slice(0, 10);
+      localStorage.setItem(STORAGE_KEYS.LEADERBOARD, JSON.stringify(top));
+      const best = getBest();
+      if (best === null || score > best) setBest(score);
+      return top;
+    }
+    function renderLeaderboard() {
+      const lb = getLeaderboard();
+      if (lb.length === 0) {
+        leaderboardList.innerHTML = '<div class="leaderboard-empty">No scores yet. Be the first!</div>';
+        return;
+      }
+      const rankClasses = ['gold', 'silver', 'bronze'];
+      leaderboardList.innerHTML = lb.map((e, i) => {
+        const rc = i < 3 ? rankClasses[i] : '';
+        const date = formatDate(e.date);
+        return `<div class="leaderboard-entry">
+          <span class="leaderboard-rank ${rc}">#${i+1}</span>
+          <span class="leaderboard-score">${e.score} pts</span>
+          <span class="leaderboard-date">${date}</span>
+        </div>`;
+      }).join('');
+    }
+    function formatDate(ts) {
+      const d = Date.now() - ts;
+      const m = Math.floor(d / 60000), h = Math.floor(d / 3600000), day = Math.floor(d / 86400000);
+      if (m < 1) return 'just now';
+      if (m < 60) return `${m}m ago`;
+      if (h < 24) return `${h}h ago`;
+      if (day < 30) return `${day}d ago`;
+      return new Date(ts).toLocaleDateString();
+    }
+
+    // ---- RING DRAWING ----
+    function polarToXY(angleDeg, radius) {
+      const rad = (angleDeg - 90) * DEG_TO_RAD;
+      return { x: radius * Math.cos(rad), y: radius * Math.sin(rad) };
+    }
+
+    function describeArc(cx, cy, radius, startAngle, endAngle) {
+      // Convert to SVG arc path with correct coordinate system (0=top, clockwise)
+      const s = (startAngle - 90) * DEG_TO_RAD;
+      const e = (endAngle - 90) * DEG_TO_RAD;
+      const x1 = cx + radius * Math.cos(s), y1 = cy + radius * Math.sin(s);
+      const x2 = cx + radius * Math.cos(e), y2 = cy + radius * Math.sin(e);
+      const large = (endAngle - startAngle + 360) % 360 > 180 ? 1 : 0;
+      return `M ${x1} ${y1} A ${radius} ${radius} 0 ${large} 1 ${x2} ${y2}`;
+    }
+
+    function drawTickMarks() {
+      tickMarks.innerHTML = '';
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6;
+        const isMajor = i % 5 === 0;
+        const innerR = isMajor ? RING_RADIUS - 10 : RING_RADIUS - 7;
+        const p1 = polarToXY(angle, RING_RADIUS + 1);
+        const p2 = polarToXY(angle, innerR);
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', p1.x); tick.setAttribute('y1', p1.y);
+        tick.setAttribute('x2', p2.x); tick.setAttribute('y2', p2.y);
+        tick.setAttribute('stroke', isMajor ? 'rgba(0,245,255,0.3)' : 'rgba(0,245,255,0.12)');
+        tick.setAttribute('stroke-width', isMajor ? 2 : 1);
+        tick.setAttribute('stroke-linecap', 'round');
+        tickMarks.appendChild(tick);
+      }
+    }
+
+    function placeTargetZone() {
+      // Zone placed at a random position with fixed size per level
+      // Ensure zone spawns at least 80° away from indicator's current position
+      const cfg = LEVELS[currentLevel];
+      activeZoneWidth = (cfg.zoneMin + cfg.zoneMax) / 2; // Fixed middle value
+
+      let attempts = 0;
+      do {
+        currentZoneStart = Math.random() * 360;
+        currentZoneEnd = normalizeAngle(currentZoneStart + activeZoneWidth);
+        attempts++;
+      } while (getAngleDistance(currentAngle, currentZoneStart) < 80 && attempts < 20);
+
+      enteredZone = false;
+      wasInZone = false;
+
+      const path = describeArc(0, 0, RING_RADIUS, currentZoneStart, currentZoneEnd);
+      targetZones.innerHTML = `
+        <path d="${path}"
+          fill="none"
+          stroke="var(--danger)"
+          stroke-width="14"
+          stroke-linecap="round"
+          opacity="0.9"
+          style="filter: drop-shadow(0 0 6px var(--danger))"/>
+      `;
+    }
+
+    function getAngleDistance(a, b) {
+      const diff = Math.abs(normalizeAngle(a) - normalizeAngle(b));
+      return Math.min(diff, 360 - diff);
+    }
+
+    // ---- UI HELPERS ----
+    function showScreen(id) {
+      [screenIdle, screenLevelComplete, screenGameOver, screenAllClear].forEach(s => s.classList.remove('active'));
+      if (id) $(id).classList.add('active');
+    }
+
+    function showLevelBanner(level, cb) {
+      levelBannerNumber.textContent = level + 1;
+      levelBannerText.textContent = level === 0 ? 'GET READY' : `LEVEL ${level + 1}`;
+      levelBannerSpeed.textContent = LEVELS[level].label + ' MODE';
+      levelBanner.classList.add('active');
+      soundLevelUp();
+      setTimeout(() => {
+        levelBanner.classList.remove('active');
+        setTimeout(cb, 300);
+      }, 1800);
+    }
+
+    function updateHUD() {
+      const cfg = LEVELS[currentLevel];
+      hudLevel.textContent = `LEVEL ${currentLevel + 1}`;
+      hudScore.textContent = `SCORE: ${totalScore}`;
+      hudHits.textContent = `HIT ${hitsThisLevel} / ${cfg.hits}`;
+
+      const best = getBest();
+      if (best !== null) {
+        hudBest.classList.remove('hidden');
+        hudBestVal.textContent = best;
+      }
+    }
+
+    function buildIdleDots() {
+      idleLevelDots.innerHTML = '';
+      LEVELS.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = 'level-dot';
+        if (i < currentLevel) d.classList.add('done');
+        if (i === currentLevel) d.classList.add('current');
+        idleLevelDots.appendChild(d);
+      });
+    }
+
+    function updateIdleScreen() {
+      const best = getBest();
+      if (best !== null) {
+        screenIdleBest.textContent = `BEST: ${best} pts`;
+      } else {
+        screenIdleBest.textContent = '';
+      }
+      buildIdleDots();
+    }
+
+    function flashElement(el) {
+      el.classList.remove('active');
+      void el.offsetWidth;
+      el.classList.add('active');
+      setTimeout(() => el.classList.remove('active'), 300);
+    }
+
+    function showFeedback(text, color, x, y) {
+      feedbackPop.textContent = text;
+      feedbackPop.style.color = color;
+      feedbackPop.style.textShadow = `0 0 10px ${color}`;
+      feedbackPop.style.left = x + 'px';
+      feedbackPop.style.top = y + 'px';
+      feedbackPop.classList.remove('pop');
+      void feedbackPop.offsetWidth;
+      feedbackPop.classList.add('pop');
+    }
+
+    function triggerHitBurst(angle) {
+      const pos = polarToXY(angle, RING_RADIUS);
+      hitBurst.setAttribute('transform', `translate(${pos.x}, ${pos.y})`);
+      hitBurst.classList.remove('active');
+      void hitBurst.offsetWidth;
+      hitBurst.classList.add('active');
+    }
+
+    // ---- ANGLE HELPERS ----
+    function normalizeAngle(a) { return ((a % 360) + 360) % 360; }
+
+    function isInZone(angle) {
+      // Handle wrap-around
+      if (currentZoneStart < currentZoneEnd) {
+        return angle >= currentZoneStart && angle <= currentZoneEnd;
+      } else {
+        return angle >= currentZoneStart || angle <= currentZoneEnd;
+      }
+    }
+
+    // ---- GAME LOOP ----
+    function gameLoop() {
+      if (!gameRunning) return;
+      const cfg = LEVELS[currentLevel];
+
+      // Advance angle
+      currentAngle = normalizeAngle(currentAngle + cfg.speed);
+
+      // Zone stays fixed — only check if indicator enters/exits the stationary zone
+      const inZone = isInZone(currentAngle);
+
+      // Track when green dot first enters the zone this rotation
+      if (inZone && !wasInZone) {
+        enteredZone = true;
+      }
+
+      // If green dot has entered AND then exits the zone without a tap → MISS / game over
+      if (enteredZone && !inZone) {
+        triggerMiss();
+        return;
+      }
+
+      wasInZone = inZone;
+
+      // Redraw indicator (zone is stationary, no updateZone needed)
+      updateIndicator();
+
+      animFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    function updateIndicator() {
+      const pos = polarToXY(currentAngle, RING_RADIUS);
+      indicator.setAttribute('cx', pos.x);
+      indicator.setAttribute('cy', pos.y);
+    }
+
+    function updateZone() {
+      const path = describeArc(0, 0, RING_RADIUS, currentZoneStart, currentZoneEnd);
+      targetZones.innerHTML = `
+        <path d="${path}"
+          fill="none"
+          stroke="var(--danger)"
+          stroke-width="14"
+          stroke-linecap="round"
+          opacity="0.9"
+          style="filter: drop-shadow(0 0 6px var(--danger))"/>
+      `;
+    }
+
+    // ---- START / STOP ----
+    function startLevel(level) {
+      currentLevel = level;
+      hitsThisLevel = 0;
+      levelScore = 0;
+      currentAngle = 0;
+      enteredZone = false;
+      wasInZone = false;
+      updateIndicator();
+      placeTargetZone(); // Random position + size at start of level
+      updateHUD();
+      gameRunning = true;
+      ringCenterText.setAttribute('opacity', '0');
+      animFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    function stopGame() {
+      gameRunning = false;
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+
+    // ---- MISS (called from game loop when dot leaves zone) ----
+    function triggerMiss() {
+      stopGame();
+      soundMiss();
+      vibrateMiss();
+      flashElement(missFlash);
+      const rect = arena.getBoundingClientRect();
+      showFeedback('MISS!', 'var(--danger)', rect.left + rect.width / 2, rect.top + rect.height / 2);
+      setTimeout(() => {
+        goSubtitle.textContent = `MISSED THE RED ZONE!`;
+        goScore.textContent = `SCORE: ${totalScore} pts`;
+        const best = getBest();
+        goBest.textContent = best !== null ? `BEST: ${best} pts` : '';
+        showScreen('screenGameOver');
+      }, 600);
+    }
+
+    // ---- HANDLE TAP ----
+    function handleTap(e) {
+      if (tapLockout) return;
+      tapLockout = true;
+      setTimeout(() => { tapLockout = false; }, 80);
+
+      soundTap();
+
+      const inZone = isInZone(currentAngle);
+      const rect = arena.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      if (inZone) {
+        // HIT!
+        soundHit();
+        vibrateHit();
+        const cfg = LEVELS[currentLevel];
+        hitsThisLevel++;
+        const pts = 10 + Math.round(cfg.speed * 5);
+        totalScore += pts;
+        levelScore += pts;
+        triggerHitBurst(currentAngle);
+        showFeedback(`+${pts}`, 'var(--success)', cx, cy);
+        updateHUD();
+
+        if (hitsThisLevel >= cfg.hits) {
+          // Level complete!
+          stopGame();
+          flashElement(levelFlash);
+          soundLevelUp();
+
+          if (currentLevel >= LEVELS.length - 1) {
+            // ALL CLEAR!
+            vibrateWin();
+            saveScore(totalScore);
+            const best = getBest();
+            acScore.textContent = `FINAL SCORE: ${totalScore} pts`;
+            acBest.textContent = best !== null ? `BEST: ${best} pts` : '';
+            showScreen('screenAllClear');
+            soundGameWin();
+          } else {
+            // Next level
+            setTimeout(() => {
+              lcSubtitle.textContent = `LEVEL ${currentLevel + 1} CLEARED!`;
+              lcScore.textContent = `SCORE: ${totalScore} pts`;
+              showScreen('screenLevelComplete');
+            }, 500);
+          }
+        } else {
+          // Place new zone at a NEW random position with NEW random size
+          placeTargetZone();
+        }
+      } else {
+        // Tapped but dot was not in zone — game over
+        triggerMiss();
+      }
+    }
+
+    // ---- GAME INIT FLOW ----
+    function startGame() {
+      currentLevel = 0;
+      totalScore = 0;
+      hitsThisLevel = 0;
+      showScreen(null);
+      showLevelBanner(0, () => startLevel(0));
+    }
+
+    function nextLevel() {
+      showScreen(null);
+      currentLevel++;
+      showLevelBanner(currentLevel, () => startLevel(currentLevel));
+    }
+
+    function retryGame() {
+      currentLevel = 0;
+      totalScore = 0;
+      hitsThisLevel = 0;
+      showScreen(null);
+      showLevelBanner(0, () => startLevel(0));
+    }
+
+    // ---- LEADERBOARD ----
+    function openLeaderboard() {
+      renderLeaderboard();
+      leaderboardPanel.classList.add('open');
+    }
+    function closeLeaderboard() {
+      leaderboardPanel.classList.remove('open');
+    }
+
+    // ---- DARK MODE ----
+    function toggleDarkMode() {
+      document.body.classList.toggle('light-mode');
+      const isLight = document.body.classList.contains('light-mode');
+      darkToggle.textContent = isLight ? '☀️' : '🌙';
+      localStorage.setItem('levelring_theme', isLight ? 'light' : 'dark');
+    }
+    function loadTheme() {
+      if (localStorage.getItem('levelring_theme') === 'light') {
+        document.body.classList.add('light-mode');
+        darkToggle.textContent = '☀️';
+      }
+    }
+
+    // ---- INIT ----
+    function init() {
+      loadTheme();
+      drawTickMarks();
+      updateIdleScreen();
+
+      // Set SVG size based on viewport
+      function setRingSize() {
+        const size = Math.min(window.innerWidth * 0.8, window.innerHeight * 0.5, 320);
+        const svg = $('ringSvg');
+        svg.setAttribute('width', size);
+        svg.setAttribute('height', size);
+      }
+      setRingSize();
+      window.addEventListener('resize', setRingSize);
+
+      // Tap on arena
+      arena.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (gameRunning) handleTap(e);
+      });
+
+      // Also tap anywhere on game when running
+      game.addEventListener('pointerdown', (e) => {
+        if (gameRunning && !e.target.closest('.top-btns') && !e.target.closest('.icon-btn')) {
+          e.preventDefault();
+          handleTap(e);
+        }
+      });
+
+      // Buttons
+      $('btnStart').addEventListener('pointerdown', (e) => { e.stopPropagation(); soundTap(); startGame(); });
+      $('btnNextLevel').addEventListener('pointerdown', (e) => { e.stopPropagation(); soundTap(); nextLevel(); });
+      $('btnRetry').addEventListener('pointerdown', (e) => { e.stopPropagation(); soundTap(); retryGame(); });
+      $('btnPlayAgain').addEventListener('pointerdown', (e) => { e.stopPropagation(); soundTap(); retryGame(); });
+
+      // Leaderboard
+      leaderboardBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); openLeaderboard(); });
+      $('leaderboardBackdrop').addEventListener('pointerdown', (e) => { e.stopPropagation(); closeLeaderboard(); });
+      $('leaderboardClose').addEventListener('pointerdown', (e) => { e.stopPropagation(); closeLeaderboard(); });
+
+      // Dark toggle
+      darkToggle.addEventListener('pointerdown', (e) => { e.stopPropagation(); toggleDarkMode(); });
+
+      // Prevent context menu
+      game.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // Resume audio context
+      document.addEventListener('pointerdown', () => {
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      }, { once: true });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
