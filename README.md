@@ -30,6 +30,7 @@ A retro arcade timing game built with vanilla HTML, CSS, and JavaScript.
 - **Leaderboard** — top 10 local scores saved to localStorage
 - **Dark/Light mode** toggle
 - **CRT aesthetic** — scanline overlay, neon glow effects
+- **Cyberpunk city background** — animated parallax cityscape with neon lights, rain, and scrolling building layers
 - **Sound effects** — Web Audio API for hit/miss/level-up sounds
 - **Haptic feedback** — Vibration API support
 - **Mobile-first** — optimized for touch devices

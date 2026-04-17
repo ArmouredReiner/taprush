@@ -16,7 +16,7 @@
        CSS CUSTOM PROPERTIES
        ============================================================ */
     :root {
-      --bg: #0a0a0f;
+      --bg: #0a0a12;
       --bg-light: #1a1a2e;
       --primary: #00f5ff;
       --accent: #ff00aa;
@@ -31,6 +31,218 @@
       --glow-accent: 0 0 8px var(--accent), 0 0 16px var(--accent);
       --font: 'Press Start 2P', monospace;
       --ease-arcade: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ============================================================
+       CYBERPUNK CITY BACKGROUND
+       ============================================================ */
+    .city-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      background: linear-gradient(180deg,
+        #0a0a12 0%,
+        #12122a 30%,
+        #1a0a2e 60%,
+        #0a0a12 100%
+      );
+    }
+
+    /* Starfield / distant lights */
+    .city-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 15%, rgba(255,255,255,0.8), transparent),
+        radial-gradient(1px 1px at 40% 25%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.7), transparent),
+        radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 10% 30%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1px 1px at 50% 5%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(1px 1px at 70% 35%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 30% 8%, rgba(255,255,255,0.7), transparent),
+        radial-gradient(1px 1px at 90% 12%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(2px 2px at 15% 18%, var(--primary), transparent),
+        radial-gradient(2px 2px at 85% 8%, var(--accent), transparent),
+        radial-gradient(2px 2px at 55% 22%, var(--success), transparent);
+      animation: twinkle 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes twinkle {
+      0%   { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    /* City layers container */
+    .city-layers {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 55%;
+      overflow: hidden;
+    }
+
+    /* City layer base styles */
+    .city-layer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 200%;
+      height: 100%;
+    }
+
+    /* Far city layer - slowest, tallest buildings */
+    .city-layer-far {
+      background:
+        /* Buildings silhouette */
+        linear-gradient(transparent 60%, #0d0d1a 60%),
+        /* Neon accent lines on buildings */
+        repeating-linear-gradient(90deg,
+          transparent 0px,
+          transparent 20px,
+          rgba(0, 245, 255, 0.1) 20px,
+          rgba(0, 245, 255, 0.1) 21px,
+          transparent 21px,
+          transparent 40px
+        ),
+        repeating-linear-gradient(90deg,
+          transparent 0px,
+          transparent 30px,
+          rgba(255, 0, 170, 0.08) 30px,
+          rgba(255, 0, 170, 0.08) 31px,
+          transparent 31px,
+          transparent 60px
+        );
+      background-size: 60px 100%, 100% 100%, 100% 100%;
+      animation: city-scroll-far 60s linear infinite;
+      opacity: 0.9;
+    }
+
+    /* Mid city layer */
+    .city-layer-mid {
+      background:
+        /* Building shapes */
+        linear-gradient(transparent 45%, #111122 45%),
+        /* Window lights grid */
+        repeating-linear-gradient(90deg,
+          transparent 0px,
+          transparent 15px,
+          rgba(255, 170, 0, 0.15) 15px,
+          rgba(255, 170, 0, 0.15) 17px,
+          transparent 17px,
+          transparent 30px
+        ),
+        repeating-linear-gradient(0deg,
+          transparent 0px,
+          transparent 10px,
+          rgba(255, 170, 0, 0.1) 10px,
+          rgba(255, 170, 0, 0.1) 12px,
+          transparent 12px,
+          transparent 20px
+        );
+      background-size: 80px 100%, 100% 100%, 100% 100%;
+      animation: city-scroll-mid 40s linear infinite;
+      opacity: 0.85;
+    }
+
+    /* Near city layer - fastest, shortest buildings */
+    .city-layer-near {
+      background:
+        /* Building shapes */
+        linear-gradient(transparent 30%, #0a0a18 30%),
+        /* Neon signs */
+        repeating-linear-gradient(90deg,
+          transparent 0px,
+          transparent 25px,
+          rgba(255, 0, 255, 0.2) 25px,
+          rgba(255, 0, 255, 0.2) 27px,
+          transparent 27px,
+          transparent 50px
+        ),
+        repeating-linear-gradient(90deg,
+          transparent 0px,
+          transparent 40px,
+          rgba(0, 255, 136, 0.15) 40px,
+          rgba(0, 255, 136, 0.15) 42px,
+          transparent 42px,
+          transparent 80px
+        );
+      background-size: 100px 100%, 100% 100%, 100% 100%;
+      animation: city-scroll-near 25s linear infinite;
+      opacity: 0.8;
+    }
+
+    @keyframes city-scroll-far {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    @keyframes city-scroll-mid {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    @keyframes city-scroll-near {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* City glow - neon light pollution */
+    .city-glow {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      height: 40%;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% 100%,
+          rgba(255, 0, 170, 0.15) 0%,
+          rgba(0, 245, 255, 0.08) 40%,
+          transparent 70%
+        );
+      pointer-events: none;
+    }
+
+    /* Ground reflection line */
+    .city-ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        var(--primary) 20%,
+        var(--accent) 50%,
+        var(--primary) 80%,
+        transparent 100%
+      );
+      opacity: 0.6;
+      box-shadow:
+        0 0 10px var(--primary),
+        0 0 20px var(--accent),
+        0 0 30px var(--primary);
+    }
+
+    /* Rain effect */
+    .rain {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(180deg, transparent 0%, rgba(0, 245, 255, 0.3) 50%, transparent 100%);
+      background-size: 1px 80px;
+      background-position: 0 0;
+      animation: rain-fall 0.4s linear infinite;
+      opacity: 0.15;
+    }
+
+    @keyframes rain-fall {
+      0%   { background-position: 0 0; }
+      100% { background-position: 0 80px; }
     }
 
     /* ============================================================
@@ -60,7 +272,7 @@
     }
 
     /* ============================================================
-       CRT OVERLAY
+       CRT OVERLAY (subtle with city bg)
        ============================================================ */
     body::before {
       content: '';
@@ -70,9 +282,9 @@
         repeating-linear-gradient(
           0deg,
           transparent,
-          transparent 2px,
-          rgba(0, 0, 0, 0.15) 2px,
-          rgba(0, 0, 0, 0.15) 4px
+          transparent 3px,
+          rgba(0, 0, 0, 0.08) 3px,
+          rgba(0, 0, 0, 0.08) 6px
         );
       pointer-events: none;
       z-index: 1000;
@@ -82,7 +294,7 @@
       content: '';
       position: fixed;
       inset: 0;
-      background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.6) 100%);
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
       pointer-events: none;
       z-index: 999;
     }
@@ -599,6 +811,10 @@
       --glow-accent: 0 0 6px var(--accent);
     }
 
+    body.light-mode .city-bg {
+      display: none;
+    }
+
     body.light-mode body::before,
     body.light-mode body::after {
       display: none;
@@ -611,6 +827,18 @@
   </style>
 </head>
 <body>
+
+  <!-- Cyberpunk City Background -->
+  <div class="city-bg">
+    <div class="city-layers">
+      <div class="city-layer city-layer-far"></div>
+      <div class="city-layer city-layer-mid"></div>
+      <div class="city-layer city-layer-near"></div>
+    </div>
+    <div class="city-glow"></div>
+    <div class="rain"></div>
+    <div class="city-ground"></div>
+  </div>
 
   <!-- Dark mode toggle -->
   <div class="top-btns">
