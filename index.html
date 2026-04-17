@@ -34,7 +34,7 @@
     }
 
     /* ============================================================
-       CYBERPUNK CITY BACKGROUND
+       CYBERPUNK BACKGROUND WITH IMAGE & ANIMATED CLOUDS
        ============================================================ */
     .city-bg {
       position: fixed;
@@ -43,171 +43,225 @@
       overflow: hidden;
       background: linear-gradient(180deg,
         #0a0a12 0%,
-        #12122a 30%,
-        #1a0a2e 60%,
+        #12122a 40%,
+        #1a0a2e 70%,
         #0a0a12 100%
       );
     }
 
-    /* Starfield / distant lights */
-    .city-bg::before {
+    /* Background image layer */
+    .city-bg-image {
+      position: absolute;
+      inset: 0;
+      background-image: url('https://minimax-algeng-chat-tts-us.oss-us-east-1.aliyuncs.com/ccv2%2F2026-04-17%2FMiniMax-M2.7%2F2043580942311755896%2F87bf5950b00a35c32483450d88650ea04579a0e76cbcce9d728c9e43710ab9f2..jpeg?Expires=1776484980&OSSAccessKeyId=LTAI5tCpJNKCf5EkQHSuL9xg&Signature=bazJLyexDCRAbA23vnO%2BOhE7msY%3D');
+      background-size: cover;
+      background-position: center bottom;
+      background-repeat: no-repeat;
+      opacity: 0.85;
+    }
+
+    /* Gradient overlay on image for depth */
+    .city-bg-image::after {
       content: '';
       position: absolute;
       inset: 0;
-      background-image:
-        radial-gradient(1px 1px at 20% 15%, rgba(255,255,255,0.8), transparent),
-        radial-gradient(1px 1px at 40% 25%, rgba(255,255,255,0.6), transparent),
-        radial-gradient(1px 1px at 60% 10%, rgba(255,255,255,0.7), transparent),
-        radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.5), transparent),
-        radial-gradient(1px 1px at 10% 30%, rgba(255,255,255,0.4), transparent),
-        radial-gradient(1px 1px at 50% 5%, rgba(255,255,255,0.6), transparent),
-        radial-gradient(1px 1px at 70% 35%, rgba(255,255,255,0.5), transparent),
-        radial-gradient(1px 1px at 30% 8%, rgba(255,255,255,0.7), transparent),
-        radial-gradient(1px 1px at 90% 12%, rgba(255,255,255,0.4), transparent),
-        radial-gradient(2px 2px at 15% 18%, var(--primary), transparent),
-        radial-gradient(2px 2px at 85% 8%, var(--accent), transparent),
-        radial-gradient(2px 2px at 55% 22%, var(--success), transparent);
-      animation: twinkle 4s ease-in-out infinite alternate;
+      background:
+        linear-gradient(180deg,
+          rgba(10, 10, 18, 0.4) 0%,
+          rgba(10, 10, 18, 0.1) 30%,
+          rgba(10, 10, 18, 0.5) 80%,
+          rgba(10, 10, 18, 0.9) 100%
+        );
     }
 
-    @keyframes twinkle {
-      0%   { opacity: 0.7; }
-      100% { opacity: 1; }
+    /* Floating clouds container */
+    .clouds-container {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
     }
 
-    /* City layers container */
-    .city-layers {
+    /* Individual cloud styles */
+    .cloud {
+      position: absolute;
+      background-size: contain;
+      background-repeat: no-repeat;
+      filter: drop-shadow(0 0 20px rgba(0, 245, 255, 0.3)) drop-shadow(0 0 40px rgba(255, 0, 170, 0.2));
+      opacity: 0.6;
+    }
+
+    /* Cloud 1 - large, slow float */
+    .cloud-1 {
+      width: 300px;
+      height: 120px;
+      top: 8%;
+      left: -300px;
+      background: linear-gradient(135deg,
+        rgba(0, 245, 255, 0.15) 0%,
+        rgba(255, 0, 170, 0.1) 50%,
+        rgba(0, 245, 255, 0.15) 100%
+      );
+      border-radius: 50% 60% 40% 50%;
+      animation:
+        cloud-drift-1 35s linear infinite,
+        cloud-float-1 6s ease-in-out infinite alternate;
+    }
+
+    /* Cloud 2 - medium, medium speed */
+    .cloud-2 {
+      width: 200px;
+      height: 80px;
+      top: 18%;
+      left: -200px;
+      background: linear-gradient(135deg,
+        rgba(255, 0, 170, 0.12) 0%,
+        rgba(0, 255, 136, 0.08) 50%,
+        rgba(255, 0, 170, 0.12) 100%
+      );
+      border-radius: 40% 50% 60% 40%;
+      animation:
+        cloud-drift-2 45s linear infinite,
+        cloud-float-2 8s ease-in-out infinite alternate;
+      animation-delay: -15s;
+    }
+
+    /* Cloud 3 - small, fast */
+    .cloud-3 {
+      width: 150px;
+      height: 60px;
+      top: 5%;
+      left: -150px;
+      background: linear-gradient(135deg,
+        rgba(0, 255, 136, 0.1) 0%,
+        rgba(0, 245, 255, 0.15) 100%
+      );
+      border-radius: 50% 40% 50% 60%;
+      animation:
+        cloud-drift-3 28s linear infinite,
+        cloud-float-3 5s ease-in-out infinite alternate;
+      animation-delay: -8s;
+    }
+
+    /* Cloud 4 - wispy, high */
+    .cloud-4 {
+      width: 250px;
+      height: 50px;
+      top: 12%;
+      left: -250px;
+      background: linear-gradient(90deg,
+        rgba(255, 0, 170, 0.08) 0%,
+        rgba(0, 245, 255, 0.12) 50%,
+        rgba(255, 0, 170, 0.08) 100%
+      );
+      border-radius: 50%;
+      animation:
+        cloud-drift-1 55s linear infinite,
+        cloud-float-4 10s ease-in-out infinite alternate;
+      animation-delay: -25s;
+      opacity: 0.4;
+    }
+
+    /* Cloud 5 - bottom layer glow cloud */
+    .cloud-5 {
+      width: 400px;
+      height: 100px;
+      top: 65%;
+      left: -400px;
+      background: radial-gradient(ellipse at center,
+        rgba(255, 0, 170, 0.2) 0%,
+        rgba(0, 245, 255, 0.1) 40%,
+        transparent 70%
+      );
+      border-radius: 50%;
+      animation:
+        cloud-drift-2 50s linear infinite,
+        cloud-float-5 12s ease-in-out infinite alternate;
+      animation-delay: -20s;
+      filter: blur(3px);
+    }
+
+    /* Cloud 6 - neon accent cloud */
+    .cloud-6 {
+      width: 180px;
+      height: 70px;
+      top: 25%;
+      left: -180px;
+      background: linear-gradient(135deg,
+        rgba(0, 245, 255, 0.2) 0%,
+        rgba(255, 170, 0, 0.1) 100%
+      );
+      border-radius: 60% 40% 50% 50%;
+      animation:
+        cloud-drift-3 40s linear infinite,
+        cloud-float-6 7s ease-in-out infinite alternate;
+      animation-delay: -12s;
+    }
+
+    /* Drift animations - horizontal movement */
+    @keyframes cloud-drift-1 {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(calc(100vw + 600px)); }
+    }
+
+    @keyframes cloud-drift-2 {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(calc(100vw + 400px)); }
+    }
+
+    @keyframes cloud-drift-3 {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(calc(100vw + 300px)); }
+    }
+
+    /* Float animations - up/down bobbing */
+    @keyframes cloud-float-1 {
+      0%   { margin-top: 0; margin-left: 0; }
+      100% { margin-top: -15px; margin-left: 10px; }
+    }
+
+    @keyframes cloud-float-2 {
+      0%   { margin-top: 0; margin-left: 0; }
+      100% { margin-top: 20px; margin-left: -15px; }
+    }
+
+    @keyframes cloud-float-3 {
+      0%   { margin-top: 0; margin-left: 0; }
+      100% { margin-top: -25px; margin-left: 5px; }
+    }
+
+    @keyframes cloud-float-4 {
+      0%   { margin-top: 0; margin-left: 0; }
+      100% { margin-top: 10px; margin-left: -20px; }
+    }
+
+    @keyframes cloud-float-5 {
+      0%   { margin-top: 0; opacity: 0.6; }
+      100% { margin-top: -30px; opacity: 0.3; }
+    }
+
+    @keyframes cloud-float-6 {
+      0%   { margin-top: 0; margin-left: 0; }
+      100% { margin-top: 15px; margin-left: 12px; }
+    }
+
+    /* Neon city glow from below */
+    .city-glow {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 55%;
-      overflow: hidden;
-    }
-
-    /* City layer base styles */
-    .city-layer {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 200%;
-      height: 100%;
-    }
-
-    /* Far city layer - slowest, tallest buildings */
-    .city-layer-far {
+      height: 30%;
       background:
-        /* Buildings silhouette */
-        linear-gradient(transparent 60%, #0d0d1a 60%),
-        /* Neon accent lines on buildings */
-        repeating-linear-gradient(90deg,
-          transparent 0px,
-          transparent 20px,
-          rgba(0, 245, 255, 0.1) 20px,
-          rgba(0, 245, 255, 0.1) 21px,
-          transparent 21px,
-          transparent 40px
-        ),
-        repeating-linear-gradient(90deg,
-          transparent 0px,
-          transparent 30px,
-          rgba(255, 0, 170, 0.08) 30px,
-          rgba(255, 0, 170, 0.08) 31px,
-          transparent 31px,
-          transparent 60px
-        );
-      background-size: 60px 100%, 100% 100%, 100% 100%;
-      animation: city-scroll-far 60s linear infinite;
-      opacity: 0.9;
-    }
-
-    /* Mid city layer */
-    .city-layer-mid {
-      background:
-        /* Building shapes */
-        linear-gradient(transparent 45%, #111122 45%),
-        /* Window lights grid */
-        repeating-linear-gradient(90deg,
-          transparent 0px,
-          transparent 15px,
-          rgba(255, 170, 0, 0.15) 15px,
-          rgba(255, 170, 0, 0.15) 17px,
-          transparent 17px,
-          transparent 30px
-        ),
-        repeating-linear-gradient(0deg,
-          transparent 0px,
-          transparent 10px,
-          rgba(255, 170, 0, 0.1) 10px,
-          rgba(255, 170, 0, 0.1) 12px,
-          transparent 12px,
-          transparent 20px
-        );
-      background-size: 80px 100%, 100% 100%, 100% 100%;
-      animation: city-scroll-mid 40s linear infinite;
-      opacity: 0.85;
-    }
-
-    /* Near city layer - fastest, shortest buildings */
-    .city-layer-near {
-      background:
-        /* Building shapes */
-        linear-gradient(transparent 30%, #0a0a18 30%),
-        /* Neon signs */
-        repeating-linear-gradient(90deg,
-          transparent 0px,
-          transparent 25px,
-          rgba(255, 0, 255, 0.2) 25px,
-          rgba(255, 0, 255, 0.2) 27px,
-          transparent 27px,
-          transparent 50px
-        ),
-        repeating-linear-gradient(90deg,
-          transparent 0px,
-          transparent 40px,
-          rgba(0, 255, 136, 0.15) 40px,
-          rgba(0, 255, 136, 0.15) 42px,
-          transparent 42px,
-          transparent 80px
-        );
-      background-size: 100px 100%, 100% 100%, 100% 100%;
-      animation: city-scroll-near 25s linear infinite;
-      opacity: 0.8;
-    }
-
-    @keyframes city-scroll-far {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    @keyframes city-scroll-mid {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    @keyframes city-scroll-near {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
-    }
-
-    /* City glow - neon light pollution */
-    .city-glow {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      height: 40%;
-      background:
-        radial-gradient(ellipse 80% 40% at 50% 100%,
-          rgba(255, 0, 170, 0.15) 0%,
-          rgba(0, 245, 255, 0.08) 40%,
-          transparent 70%
+        linear-gradient(0deg,
+          rgba(255, 0, 170, 0.25) 0%,
+          rgba(0, 245, 255, 0.15) 30%,
+          transparent 60%
         );
       pointer-events: none;
     }
 
-    /* Ground reflection line */
+    /* Glowing ground line */
     .city-ground {
       position: absolute;
       bottom: 0;
@@ -216,33 +270,38 @@
       height: 3px;
       background: linear-gradient(90deg,
         transparent 0%,
-        var(--primary) 20%,
+        var(--primary) 15%,
         var(--accent) 50%,
-        var(--primary) 80%,
+        var(--primary) 85%,
         transparent 100%
       );
-      opacity: 0.6;
       box-shadow:
-        0 0 10px var(--primary),
-        0 0 20px var(--accent),
-        0 0 30px var(--primary);
+        0 0 15px var(--primary),
+        0 0 30px var(--accent),
+        0 0 45px var(--primary);
     }
 
-    /* Rain effect */
-    .rain {
+    /* Distant twinkling lights */
+    .distant-lights {
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(180deg, transparent 0%, rgba(0, 245, 255, 0.3) 50%, transparent 100%);
-      background-size: 1px 80px;
-      background-position: 0 0;
-      animation: rain-fall 0.4s linear infinite;
-      opacity: 0.15;
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8), transparent),
+        radial-gradient(1px 1px at 30% 15%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(2px 2px at 50% 25%, var(--primary), transparent),
+        radial-gradient(1px 1px at 70% 10%, rgba(255,255,255,0.7), transparent),
+        radial-gradient(2px 2px at 90% 30%, var(--accent), transparent),
+        radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 80% 18%, rgba(255,255,255,0.6), transparent),
+        radial-gradient(2px 2px at 15% 8%, var(--success), transparent),
+        radial-gradient(1px 1px at 60% 5%, rgba(255,255,255,0.8), transparent),
+        radial-gradient(1px 1px at 45% 28%, rgba(255,255,255,0.4), transparent);
+      animation: twinkle 4s ease-in-out infinite alternate;
     }
 
-    @keyframes rain-fall {
-      0%   { background-position: 0 0; }
-      100% { background-position: 0 80px; }
+    @keyframes twinkle {
+      0%   { opacity: 0.6; }
+      100% { opacity: 1; }
     }
 
     /* ============================================================
@@ -830,13 +889,17 @@
 
   <!-- Cyberpunk City Background -->
   <div class="city-bg">
-    <div class="city-layers">
-      <div class="city-layer city-layer-far"></div>
-      <div class="city-layer city-layer-mid"></div>
-      <div class="city-layer city-layer-near"></div>
+    <div class="city-bg-image"></div>
+    <div class="distant-lights"></div>
+    <div class="clouds-container">
+      <div class="cloud cloud-1"></div>
+      <div class="cloud cloud-2"></div>
+      <div class="cloud cloud-3"></div>
+      <div class="cloud cloud-4"></div>
+      <div class="cloud cloud-5"></div>
+      <div class="cloud cloud-6"></div>
     </div>
     <div class="city-glow"></div>
-    <div class="rain"></div>
     <div class="city-ground"></div>
   </div>
 
